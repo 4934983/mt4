@@ -1,0 +1,883 @@
+//EA交易     =>  ...\MT4\MQL4\Experts
+//极品双向EA磅美最佳.mq4
+#property  copyright "Copyright 2015, 极品双向"
+#property  link      "极品双向"
+#property strict
+
+
+extern bool Buy=true  ;   //做多开关
+extern bool Sell=true  ;   //做空开关
+extern bool FirstOrder=true  ;
+extern bool OpenTrend=false ;   //允许顺势加仓
+extern int   FirstStep=30  ;   //挂首单距离
+extern int   MinDistance=140  ;   //最小间距1
+extern int   Step=140  ;   //加仓间隔1
+extern int   MinDistance1=70  ;   //最小间距2
+extern int   Step1=140  ;   //加仓间隔2
+extern int   iCount=5  ;   //订单数分水岭
+extern int   StepTrallOrders=5  ;   //挂单移动步长
+extern double MaxLoss=100000  ;   //亏损到多少元暂停加仓
+extern double MaxLossCloseAll=5  ;
+extern double lot=0.01  ;   //初始手数
+extern double PlusLot=0  ;   //加仓递增手数
+extern double K_Lot=1.7  ;   //加仓倍数值
+extern int   DigitsLot=2  ;   //交易手数小数位
+extern double CloseAll=5  ;   //多空全部止损金额
+extern double StopProfit=6  ;   //单边整体止盈金额
+extern double StopLoss=200  ;   //单边整体止损金额
+extern int   Magic=888  ;
+extern int   font_size=10  ;
+extern color text_color=Lime  ;
+extern string ___________________=""  ;
+extern string parameters_trailing="0-off  1-Candle  2-Fractals  >2-pips"  ;
+extern int   TrailingStop=1  ;   //跟踪止损
+extern int   TrailingStep=0  ;   //跟踪步长
+extern int   MinProfit=10  ;   //跟踪止损均价保利点数
+extern int   delta=0  ;   //止损增益点数
+extern int   TF_Tralling=0  ;   //图表周期
+extern int   Key=0  ;
+extern string a="时间"  ;
+extern bool sj=false ;   //交易时段开关
+extern int   star=1  ;   //开始（小时）
+extern int   end=20  ;   //结束（小时）
+
+ 
+int       by_in_2 = 0;
+int       by_in_3 = 5;
+int       by_in_4 = 0;
+int       by_in_5 = 0;
+int       by_in_6 = 30;
+int       by_in_7 = 30;
+int       by_in_8 = 30;
+int       by_in_9 = 30;
+
+
+
+//----------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int init()
+  {
+   int       dfz_in_1;
+   bool      dfz_bo_2;
+   string    dfz_st_3;
+
+//----------------------------
+
+   TF_Tralling = lizong_7(TF_Tralling) ;
+   if(Digits()==5 || Digits()==3)
+     {
+      by_in_5 = 30 ;
+     }
+   Comment("");
+   by_in_2 = MarketInfo(Symbol(),14) ;
+   if(Step< by_in_2)
+     {
+      Alert("Step < STOPLEVEL",by_in_2);
+      Step = by_in_2 ;
+     }
+   if(FirstStep< by_in_2)
+     {
+      Alert("FirstStep < STOPLEVEL",by_in_2);
+      FirstStep = by_in_2 ;
+     }
+   dfz_in_1 = font_size + font_size / 2;
+   ObjectCreate("Balance",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("Balance",OBJPROP_CORNER,1);
+   ObjectSet("Balance",OBJPROP_XDISTANCE,5);
+   ObjectSet("Balance",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 2;
+   ObjectCreate("Equity",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("Equity",OBJPROP_CORNER,1);
+   ObjectSet("Equity",OBJPROP_XDISTANCE,5);
+   ObjectSet("Equity",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 2;
+   ObjectCreate("FreeMargin",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("FreeMargin",OBJPROP_CORNER,1);
+   ObjectSet("FreeMargin",OBJPROP_XDISTANCE,5);
+   ObjectSet("FreeMargin",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 2;
+   by_in_4 = 1 ;
+ 
+   ObjectCreate("ProfitB",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("ProfitB",OBJPROP_CORNER,1);
+   ObjectSet("ProfitB",OBJPROP_XDISTANCE,5);
+   ObjectSet("ProfitB",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 2;
+   ObjectCreate("ProfitS",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("ProfitS",OBJPROP_CORNER,1);
+   ObjectSet("ProfitS",OBJPROP_XDISTANCE,5);
+   ObjectSet("ProfitS",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 2;
+   ObjectCreate("Profit",OBJ_LABEL,0,0,0,0,0,0,0);
+   ObjectSet("Profit",OBJPROP_CORNER,1);
+   ObjectSet("Profit",OBJPROP_XDISTANCE,5);
+   ObjectSet("Profit",OBJPROP_YDISTANCE,dfz_in_1);
+   dfz_in_1 = dfz_in_1 + font_size * 3;
+   dfz_bo_2 = false ;
+   dfz_st_3 = "Param" + false;
+   MaxLossCloseAll = -MaxLossCloseAll;
+   MaxLoss = -MaxLoss;
+   StopLoss = -StopLoss;
+   return(0);
+  }
+//init
+//---------------------  ----------------------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void start()
+  {
+   double    dfz_do_1;
+   double    dfz_do_2;
+   double    dfz_do_3;
+   double    dfz_do_4;
+   double    dfz_do_5;
+   double    dfz_do_6;
+   int       dfz_in_7;
+   int       dfz_in_8;
+   int       dfz_in_9;
+   int       dfz_in_10;
+   int       dfz_in_11;
+   int       dfz_in_12;
+   int       dfz_in_13;
+   double    dfz_do_14;
+   double    dfz_do_15;
+   double    dfz_do_16;
+   double    dfz_do_17;
+   double    dfz_do_18;
+   double    dfz_do_19;
+   double    dfz_do_20;
+   double    dfz_do_21;
+   double    dfz_do_22;
+   double    dfz_do_23;
+   double    dfz_do_24;
+   double    dfz_do_25;
+   double    dfz_do_26;
+   double    dfz_do_27;
+   double    dfz_do_28;
+   int       dfz_in_29;
+   int       dfz_in_30;
+   int       dfz_in_31;
+   int       dfz_in_32;
+   double    dfz_do_33;
+
+//----------------------------
+   double     aa_do_4;
+   int        aa_in_1;
+   int        aa_in_7;
+   int        aa_in_26;
+   int        aa_in_27;
+   int        aa_in_31;
+   int        aa_in_32;
+
+ 
+   for(dfz_in_29=0 ; dfz_in_29<OrdersTotal() ; dfz_in_29 = dfz_in_29 + 1)
+     {
+      if(OrderSelect(dfz_in_29,SELECT_BY_POS,MODE_TRADES) && OrderSymbol()==Symbol() && Magic==OrderMagicNumber())
+        {
+         dfz_in_11 = OrderType() ;
+         dfz_do_6 = OrderLots() ;
+         dfz_do_1 = NormalizeDouble(OrderOpenPrice(),Digits()) ;
+         if(dfz_in_11==4)
+           {
+            dfz_in_9 = dfz_in_9 + 1;
+            if(dfz_do_14<NormalizeDouble(OrderOpenPrice(),Digits()) || dfz_do_14==0)
+              {
+               dfz_do_14 = dfz_do_1 ;
+              }
+            dfz_in_12 = OrderTicket() ;
+            dfz_do_18 = dfz_do_1 ;
+           }
+         if(dfz_in_11==5)
+           {
+            dfz_in_10 = dfz_in_10 + 1;
+            if(dfz_do_17>dfz_do_1 || dfz_do_17==0)
+              {
+               dfz_do_17 = dfz_do_1 ;
+              }
+            dfz_in_13 = OrderTicket() ;
+            dfz_do_19 = dfz_do_1 ;
+           }
+         if(dfz_in_11==0)
+           {
+            dfz_in_7 = dfz_in_7 + 1;
+            dfz_do_4 = dfz_do_4 + dfz_do_6 ;
+            dfz_do_21 = dfz_do_1 * dfz_do_6 + dfz_do_21 ;
+            if(dfz_do_14<dfz_do_1 || dfz_do_14==0)
+              {
+               dfz_do_14 = dfz_do_1 ;
+              }
+            if(dfz_do_15>dfz_do_1 || dfz_do_15==0)
+              {
+               dfz_do_15 = dfz_do_1 ;
+              }
+            dfz_do_3 = OrderProfit() + OrderSwap() + OrderCommission() + dfz_do_3 ;
+           }
+         if(dfz_in_11==1)
+           {
+            dfz_in_8 = dfz_in_8 + 1;
+            dfz_do_5 = dfz_do_5 + dfz_do_6 ;
+            dfz_do_20 = dfz_do_1 * dfz_do_6 + dfz_do_20 ;
+            if(dfz_do_17>dfz_do_1 || dfz_do_17==0)
+              {
+               dfz_do_17 = dfz_do_1 ;
+              }
+            if(dfz_do_16<dfz_do_1 || dfz_do_16==0)
+              {
+               dfz_do_16 = dfz_do_1 ;
+              }
+            dfz_do_2 = OrderProfit() + OrderSwap() + OrderCommission() + dfz_do_2 ;
+           }
+        }
+     }
+   if(dfz_in_7>iCount)
+     {
+      by_in_6 = MinDistance1 ;
+      by_in_7 = Step1 ;
+     }
+   else
+     {
+      by_in_6 = MinDistance ;
+      by_in_7 = Step ;
+     }
+   if(dfz_in_8>iCount)
+     {
+      by_in_8 = MinDistance1 ;
+      by_in_9 = Step1 ;
+     }
+   else
+     {
+      by_in_8 = MinDistance ;
+      by_in_9 = Step ;
+     }
+   ObjectDelete("SLb");
+   ObjectDelete("SLs");
+   if(dfz_in_7>0)
+     {
+      dfz_do_22 = NormalizeDouble(dfz_do_21 / dfz_do_4,Digits()) ;
+      ObjectCreate("SLb",OBJ_ARROW,0,Time[0],dfz_do_22,0,0,0,0);
+      ObjectSet("SLb",OBJPROP_ARROWCODE,6);
+      ObjectSet("SLb",OBJPROP_COLOR,16711680);
+     }
+   if(dfz_in_8>0)
+     {
+      dfz_do_23 = NormalizeDouble(dfz_do_20 / dfz_do_5,Digits()) ;
+      ObjectCreate("SLs",OBJ_ARROW,0,Time[0],dfz_do_23,0,0,0,0);
+      ObjectSet("SLs",OBJPROP_ARROWCODE,6);
+      ObjectSet("SLs",OBJPROP_COLOR,255);
+     }
+   for(dfz_in_30 = 0 ; TrailingStop!=0 && dfz_in_30<OrdersTotal() ; dfz_in_30 = dfz_in_30 + 1)
+     {
+      if(OrderSelect(dfz_in_30,SELECT_BY_POS,MODE_TRADES) && OrderSymbol()==Symbol() && Magic==OrderMagicNumber())
+        {
+         dfz_in_11 = OrderType() ;
+         dfz_do_24 = NormalizeDouble(OrderStopLoss(),Digits()) ;
+         dfz_do_1 = NormalizeDouble(OrderOpenPrice(),Digits()) ;
+         dfz_do_25 = dfz_do_24 ;
+         if(dfz_in_11==0)
+           {
+            dfz_do_26 = lizong_6(1,Bid,TrailingStop) ;
+            if(dfz_do_26>=MinProfit * Point() + dfz_do_22 && dfz_do_26>TrailingStep * Point() + dfz_do_24 && (Bid - dfz_do_26) / Point()>by_in_2)
+              {
+               dfz_do_25 = dfz_do_26 ;
+              }
+            if(dfz_do_25>dfz_do_24)
+              {
+               if(!OrderModify(OrderTicket(),dfz_do_1,dfz_do_25,OrderTakeProfit(),0,White))
+                 {
+                  Print("Error ",GetLastError(),"   TrailingStop Modify Buy  SL ",dfz_do_24,"->",dfz_do_25);
+                 }
+              }
+           }
+         if(dfz_in_11==1)
+           {
+            dfz_do_26 = lizong_6(-1,Ask,TrailingStop) ;
+            if(dfz_do_26<=dfz_do_23 - MinProfit * Point() && (dfz_do_26<dfz_do_24 - TrailingStep * Point() || dfz_do_24==0) && (dfz_do_26 - Ask) / Point()>by_in_2)
+              {
+               dfz_do_25 = dfz_do_26 ;
+              }
+            if(dfz_do_25<dfz_do_24  || (dfz_do_24==0 && dfz_do_25!=0))
+              {
+               if(!OrderModify(OrderTicket(),dfz_do_1,dfz_do_25,OrderTakeProfit(),0,White))
+                 {
+                  Print("Error ",GetLastError(),"   TrailingStop Modify Sell  SL ",dfz_do_24,"->",dfz_do_25,"  TP ");
+                 }
+              }
+           }
+        }
+     }
+   if(dfz_do_3>MaxLossCloseAll && dfz_do_2>MaxLossCloseAll)
+     {
+      ObjectSetText("Char.op",CharToString(251),font_size + 2,"Wingdings",Silver);
+      if(dfz_do_3>=StopProfit)
+        {
+         Print("Buy Profit ",dfz_do_3);
+         lizong_5(1);
+         return;
+        }
+      if(dfz_do_2>=StopProfit)
+        {
+         Print("Sell Profit ",dfz_do_2);
+         lizong_5(-1);
+         return;
+        }
+     }
+   else
+     {
+      ObjectSetText("Char.op",CharToString(74),font_size + 2,"Wingdings",Red);
+      aa_do_4 = dfz_do_3 + dfz_do_2;
+      if(dfz_do_3 + dfz_do_2>=CloseAll)
+        {
+         Print("CloseAll ",aa_do_4);
+         lizong_5(0);
+         return;
+        }
+     }
+   if(dfz_do_3<=StopLoss)
+     {
+      Print("Buy Loss ",dfz_do_3);
+      lizong_5(1);
+      return;
+     }
+   if(dfz_do_2<=StopLoss)
+     {
+      Print("Sell Loss ",dfz_do_2);
+      lizong_5(-1);
+      return;
+     }
+   if(dfz_do_3<=MaxLoss)
+     {
+      Comment("Buy");
+      ObjectSetText("Char.b",CharToString(225) + CharToString(251),font_size,"Wingdings",Red);
+     }
+   else
+     {
+      ObjectSetText("Char.b",CharToString(233),font_size,"Wingdings",Lime);
+     }
+   if(dfz_do_2<=MaxLoss)
+     {
+      Comment("Sell");
+      ObjectSetText("Char.s",CharToString(226) + CharToString(251),font_size,"Wingdings",Red);
+     }
+   else
+     {
+      ObjectSetText("Char.s",CharToString(234),font_size,"Wingdings",Lime);
+     }
+   Print("Ld_16",dfz_do_3);
+   if(dfz_in_9==0 && dfz_do_3>MaxLoss && Buy)
+     {
+      if(dfz_in_7==0)
+        {
+         dfz_do_27 = NormalizeDouble(FirstStep * Point() + Ask,Digits()) ;
+        }
+      else
+        {
+         dfz_do_27 = NormalizeDouble(by_in_6 * Point() + Ask,Digits()) ;
+         if(dfz_do_27< NormalizeDouble(dfz_do_15 - by_in_7 * Point(),Digits()))
+           {
+            dfz_do_27 = NormalizeDouble(by_in_7 * Point() + Ask,Digits()) ;
+           }
+        }
+      if(dfz_in_7==0 || (dfz_do_14!=0 && dfz_do_27>=NormalizeDouble(by_in_7 * Point() + dfz_do_14,Digits()) && OpenTrend)  || (dfz_do_15!=0 && dfz_do_27<=NormalizeDouble(dfz_do_15 - by_in_7 * Point(),Digits())))
+        {
+         if(dfz_in_7==0)
+           {
+            dfz_do_28 = lot ;
+           }
+         else
+           {
+            dfz_do_28 = NormalizeDouble(dfz_in_7 * PlusLot + lot * MathPow(K_Lot,dfz_in_7),DigitsLot) ;
+           }
+         if(((dfz_do_28< AccountFreeMargin() / MarketInfo(Symbol(),32) && dfz_in_7>0) || FirstOrder))
+           {
+            if(sj==false  || (sj==true && Hour()>star && Hour()< end))
+              {
+               dfz_in_31 = OrderSend(Symbol(),OP_BUYSTOP,dfz_do_28,dfz_do_27,by_in_5,0,0,Symbol() +"Buy",Magic,0,Blue) ;
+              }
+            else
+              {
+               Comment("Lot ",DoubleToString(dfz_do_28,2));
+              }
+           }
+        }
+     }
+   if(dfz_in_10==0 && dfz_do_2>MaxLoss && Sell)
+     {
+      if(dfz_in_8==0)
+        {
+         dfz_do_27 = NormalizeDouble(Bid - FirstStep * Point(),Digits()) ;
+        }
+      else
+        {
+         dfz_do_27 = NormalizeDouble(Bid - by_in_8 * Point(),Digits()) ;
+         if(dfz_do_27< NormalizeDouble(by_in_9 * Point() + dfz_do_16,Digits()))
+           {
+            dfz_do_27 = NormalizeDouble(Bid - by_in_9 * Point(),Digits()) ;
+           }
+        }
+      if(dfz_in_8==0 || (dfz_do_17!=0 && dfz_do_27<=NormalizeDouble(dfz_do_17 - by_in_9 * Point(),Digits()) && OpenTrend)  || (dfz_do_16!=0 && dfz_do_27>=NormalizeDouble(by_in_9 * Point() + dfz_do_16,Digits())))
+        {
+         if(dfz_in_8==0)
+           {
+            dfz_do_28 = lot ;
+           }
+         else
+           {
+            dfz_do_28 = NormalizeDouble(dfz_in_8 * PlusLot + lot * MathPow(K_Lot,dfz_in_8),DigitsLot) ;
+           }
+         if(((dfz_do_28< AccountFreeMargin() / MarketInfo(Symbol(),32) && dfz_in_8>0) || FirstOrder))
+           {
+            if(sj==false  || (sj==true && Hour()>star && Hour()< end))
+              {
+               dfz_in_32 = OrderSend(Symbol(),OP_SELLSTOP,dfz_do_28,dfz_do_27,by_in_5,0,0,Symbol() +"Sell",Magic,0,Red) ;
+              }
+            else
+              {
+               Comment("Lot ",DoubleToString(dfz_do_28,2));
+              }
+           }
+        }
+     }
+   ObjectSetText("Balance",StringConcatenate("Balance ",DoubleToString(AccountBalance(),2)),font_size,"Arial",text_color);
+   ObjectSetText("Equity",StringConcatenate("Equity ",DoubleToString(AccountEquity(),2)),font_size,"Arial",text_color);
+   ObjectSetText("FreeMargin",StringConcatenate("Free Margin ",DoubleToString(AccountFreeMargin(),2)),font_size,"Arial",text_color);
+   dfz_do_33 = dfz_do_3 + dfz_do_2 ;
+   if(dfz_do_4>0)
+     {
+      aa_in_1 = 255;
+      if(dfz_do_3>0)
+        {
+         aa_in_7 = 65280;
+        }
+      else
+        {
+         aa_in_7 = aa_in_1;
+        }
+      ObjectSetText("ProfitB",StringConcatenate("Buy ",dfz_in_7,"   Profit ",DoubleToString(dfz_do_3,2),"  Lot = ",DoubleToString(dfz_do_4,2)),font_size,"Arial",aa_in_7);
+     }
+   else
+     {
+      ObjectSetText("ProfitB","",font_size,"Arial",Gray);
+     }
+   if(dfz_do_5>0)
+     {
+      aa_in_26 = 255;
+      if(dfz_do_2>0)
+        {
+         aa_in_27 = 65280;
+        }
+      else
+        {
+         aa_in_27 = aa_in_26;
+        }
+      ObjectSetText("ProfitS",StringConcatenate("Sell ",dfz_in_8,"   Profit ",DoubleToString(dfz_do_2,2),"  Lot = ",DoubleToString(dfz_do_5,2)),font_size,"Arial",aa_in_27);
+     }
+   else
+     {
+      ObjectSetText("ProfitS","",font_size,"Arial",Gray);
+     }
+   if(dfz_do_5 + dfz_do_4>0)
+     {
+      aa_in_31 = 255;
+      if(dfz_do_33>=0)
+        {
+         aa_in_32 = 32768;
+        }
+      else
+        {
+         aa_in_32 = aa_in_31;
+        }
+      ObjectSetText("Profit",StringConcatenate("Profit All ",DoubleToString(dfz_do_33,2)),font_size,"Arial",aa_in_32);
+     }
+   else
+     {
+      ObjectSetText("Profit","",font_size,"Arial",Gray);
+     }
+   if(dfz_do_18!=0 && Buy)
+     {
+      if(dfz_in_7==0)
+        {
+         dfz_do_27 = NormalizeDouble(FirstStep * Point() + Ask,Digits()) ;
+        }
+      else
+        {
+         dfz_do_27 = NormalizeDouble(by_in_6 * Point() + Ask,Digits()) ;
+        }
+      if(NormalizeDouble(dfz_do_18 - StepTrallOrders * Point(),Digits())>dfz_do_27
+         && (dfz_do_27<=NormalizeDouble(dfz_do_15 - by_in_7 * Point(),Digits()) || dfz_do_15==0 || OpenTrend)
+         && (dfz_in_7==0 || dfz_do_27>=NormalizeDouble(by_in_7 * Point() + dfz_do_14,Digits()) || dfz_do_27<=NormalizeDouble(dfz_do_15 - by_in_7 * Point(),Digits())))
+        {
+         if(!OrderModify(dfz_in_12,dfz_do_27,0,0,0,White))
+           {
+            Print("Error ",GetLastError(),"   Order Modify Buy   OOP ",dfz_do_18,"->",dfz_do_27);
+           }
+         else
+           {
+            Print("Order Buy Modify   OOP ",dfz_do_1,"->",dfz_do_27);
+           }
+        }
+     }
+   if(dfz_do_19!=0 && Sell)
+     {
+      if(dfz_in_8==0)
+        {
+         dfz_do_27 = NormalizeDouble(Bid - FirstStep * Point(),Digits()) ;
+        }
+      else
+        {
+         dfz_do_27 = NormalizeDouble(Bid - by_in_8 * Point(),Digits()) ;
+        }
+      if(NormalizeDouble(StepTrallOrders * Point() + dfz_do_19,Digits())< dfz_do_27
+         && (dfz_do_27>=NormalizeDouble(by_in_9 * Point() + dfz_do_16,Digits()) || dfz_do_16==0 || OpenTrend)
+         && (dfz_in_8==0 || dfz_do_27<=NormalizeDouble(dfz_do_17 - by_in_9 * Point(),Digits()) || dfz_do_27>=NormalizeDouble(by_in_9 * Point() + dfz_do_16,Digits())))
+        {
+         if(!OrderModify(dfz_in_13,dfz_do_27,0,0,0,White))
+           {
+            Print("Error ",GetLastError(),"   Order Modify Sell   OOP ",dfz_do_19,"->",dfz_do_27);
+           }
+         else
+           {
+            Print("Order Sell Modify   OOP ",dfz_do_1,"->",dfz_do_27);
+           }
+        }
+     }
+  }
+//start
+//---------------------  ----------------------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int deinit()
+  {
+
+//----------------------------
+
+   ObjectsDeleteAll(0,-1);
+   return(0);
+  }
+//deinit
+//---------------------  ----------------------------------------
+
+
+//----------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int lizong_5(int bsw_0)
+  {
+   int       dfz_in_1;
+   int       dfz_in_2;
+   int       dfz_in_3;
+   int       dfz_in_4;
+   bool      dfz_bo_5;
+   int       dfz_in_6;
+   int       dfz_in_7;
+
+//----------------------------
+
+   dfz_bo_5 = true ;
+   while( 1)
+     {
+      for(dfz_in_6 = OrdersTotal() - 1 ; dfz_in_6>=0 ; dfz_in_6 = dfz_in_6 - 1)
+        {
+         if(OrderSelect(dfz_in_6,SELECT_BY_POS,MODE_TRADES) && OrderSymbol()==Symbol() && OrderMagicNumber()==Magic)
+           {
+            dfz_in_3 = OrderType() ;
+            if(dfz_in_3==0 && (bsw_0==1 || bsw_0==0))
+              {
+               dfz_bo_5 = OrderClose(OrderTicket(),OrderLots(),NormalizeDouble(Bid,Digits()),by_in_5,Blue) ;
+               if(dfz_bo_5)
+                 {
+                  Comment("",OrderTicket(),"",OrderProfit(),"     ",TimeToString(TimeCurrent(),TIME_SECONDS));
+                 }
+              }
+            if(dfz_in_3==1 && (bsw_0==-1 || bsw_0==0))
+              {
+               dfz_bo_5 = OrderClose(OrderTicket(),OrderLots(),NormalizeDouble(Ask,Digits()),by_in_5,Red) ;
+               if(dfz_bo_5)
+                 {
+                  Comment("",OrderTicket(),"",OrderProfit(),"     ",TimeToString(TimeCurrent(),TIME_SECONDS));
+                 }
+              }
+            if(dfz_in_3==4 && (bsw_0==1 || bsw_0==0))
+              {
+               dfz_bo_5 = OrderDelete(OrderTicket(),0xFFFFFFFF) ;
+              }
+            if(dfz_in_3==5 && (bsw_0==-1 || bsw_0==0))
+              {
+               dfz_bo_5 = OrderDelete(OrderTicket(),0xFFFFFFFF) ;
+              }
+            if(!dfz_bo_5)
+              {
+               dfz_in_1 = GetLastError() ;
+               if(dfz_in_1>=2)
+                 {
+                  if(dfz_in_1==129)
+                    {
+                     Comment("",TimeToString(TimeCurrent(),TIME_SECONDS));
+                     RefreshRates();
+                    }
+                  else
+                    {
+                     if(dfz_in_1==146)
+                       {
+                        if(IsTradeContextBusy())
+                          {
+                           Sleep(2000);
+                          }
+                       }
+                     else
+                       {
+                        Comment("",dfz_in_1,"",OrderTicket(),"     ",TimeToString(TimeCurrent(),TIME_SECONDS));
+                       }
+                    }
+                 }
+              }
+           }
+        }
+      dfz_in_4 = 0 ;
+      for(; dfz_in_7<OrdersTotal() ; dfz_in_7 = dfz_in_7 + 1)
+        {
+         if(OrderSelect(dfz_in_7,SELECT_BY_POS,MODE_TRADES) && OrderSymbol()==Symbol() && OrderMagicNumber()==Magic)
+           {
+            dfz_in_3 = OrderType() ;
+            if((dfz_in_3==4 || dfz_in_3==0) && (bsw_0==1 || bsw_0==0))
+              {
+               dfz_in_4 = dfz_in_4 + 1;
+              }
+            if((dfz_in_3==5 || dfz_in_3==1) && (bsw_0==-1 || bsw_0==0))
+              {
+               dfz_in_4 = dfz_in_4 + 1;
+              }
+           }
+        }
+      if(dfz_in_4==0)
+         break;
+      dfz_in_2 = dfz_in_2 + 1;
+      if(dfz_in_2>10)
+        {
+         Alert(Symbol(),"",dfz_in_4);
+         return(0);
+        }
+      Sleep(1000);
+      RefreshRates();
+     }
+   return(1);
+  }
+//lizong_5
+//---------------------  ----------------------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double lizong_6(int bsw_0,double bsw_1,double bsw_2)
+  {
+   double    dfz_do_1;
+   int       dfz_in_2;
+   int       dfz_in_3;
+   int       dfz_in_4;
+
+//----------------------------
+   double     aa_do_1;
+
+   dfz_in_2 = 1 ;
+   if(bsw_2>2)
+     {
+      if(bsw_0==1)
+        {
+         dfz_do_1 = NormalizeDouble(bsw_1 - bsw_2 * Point(),Digits()) ;
+        }
+      else
+        {
+         dfz_do_1 = NormalizeDouble(bsw_2 * Point() + bsw_1,Digits()) ;
+        }
+     }
+   else
+     {
+      if(bsw_2==2)
+        {
+         if(bsw_0==1)
+           {
+            dfz_in_3 = 1 ;
+            for(dfz_in_3 = 1 ; dfz_in_3<100 ; dfz_in_3 = dfz_in_3 + 1)
+              {
+               dfz_do_1 = iFractals(Symbol(),TF_Tralling,2,dfz_in_3) ;
+               if(iFractals(Symbol(),TF_Tralling,2,dfz_in_3)!=0)
+                 {
+                  dfz_do_1 = dfz_do_1 - NormalizeDouble(delta * Point(),Digits()) ;
+                  if(bsw_1 - by_in_2 * Point()>dfz_do_1)
+                    {
+                     break;
+                    }
+                 }
+               dfz_do_1 = 0 ;
+              }
+            ObjectDelete("FR Buy");
+            ObjectCreate("FR Buy",OBJ_ARROW,0,Time[dfz_in_3],dfz_do_1 + Point(),0,0,0,0);
+            ObjectSet("FR Buy",OBJPROP_ARROWCODE,218);
+            ObjectSet("FR Buy",OBJPROP_COLOR,255);
+           }
+         if(bsw_0==-1)
+           {
+            for(dfz_in_2 = 1 ; dfz_in_2<100 ; dfz_in_2 = dfz_in_2 + 1)
+              {
+               dfz_do_1 = iFractals(Symbol(),TF_Tralling,1,dfz_in_2) ;
+               if(iFractals(Symbol(),TF_Tralling,1,dfz_in_2)!=0)
+                 {
+                  dfz_do_1 = dfz_do_1 + NormalizeDouble(delta * Point(),Digits()) ;
+                  if(by_in_2 * Point() + bsw_1< dfz_do_1)
+                    {
+                     break;
+                    }
+                 }
+               dfz_do_1 = 0 ;
+              }
+            ObjectDelete("FR Sell");
+            ObjectCreate("FR Sell",OBJ_ARROW,0,Time[dfz_in_2],dfz_do_1,0,0,0,0);
+            ObjectSet("FR Sell",OBJPROP_ARROWCODE,217);
+            ObjectSet("FR Sell",OBJPROP_COLOR,255);
+           }
+        }
+      if(bsw_2==1)
+        {
+         if(bsw_0==1)
+           {
+            dfz_in_4 = 1 ;
+            for(dfz_in_4 = 1 ; dfz_in_4<500 ; dfz_in_4 = dfz_in_4 + 1)
+              {
+               dfz_do_1 = NormalizeDouble(iLow(Symbol(),TF_Tralling,dfz_in_4) - delta * Point(),Digits()) ;
+               if(NormalizeDouble(iLow(Symbol(),TF_Tralling,dfz_in_4) - delta * Point(),Digits())!=0)
+                 {
+                  if(bsw_1 - by_in_2 * Point()>NormalizeDouble(iLow(Symbol(),TF_Tralling,dfz_in_4) - delta * Point(),Digits()))
+                     break;
+                  dfz_do_1 = 0 ;
+                 }
+              }
+            ObjectDelete("FR Buy");
+            ObjectCreate("FR Buy",OBJ_ARROW,0,iTime(Symbol(),TF_Tralling,dfz_in_4),dfz_do_1 + Point(),0,0,0,0);
+            ObjectSet("FR Buy",OBJPROP_ARROWCODE,159);
+            ObjectSet("FR Buy",OBJPROP_COLOR,255);
+           }
+         if(bsw_0==-1)
+           {
+            for(dfz_in_2 = 1 ; dfz_in_2<500 ; dfz_in_2 = dfz_in_2 + 1)
+              {
+               dfz_do_1 = NormalizeDouble(delta * Point() + iHigh(Symbol(),TF_Tralling,dfz_in_2),Digits()) ;
+               if(NormalizeDouble(delta * Point() + iHigh(Symbol(),TF_Tralling,dfz_in_2),Digits())!=0)
+                 {
+                  if(by_in_2 * Point() + bsw_1<NormalizeDouble(delta * Point() + iHigh(Symbol(),TF_Tralling,dfz_in_2),Digits()))
+                     break;
+                  dfz_do_1 = 0 ;
+                 }
+              }
+            ObjectDelete("FR Sell");
+            ObjectCreate("FR Sell",OBJ_ARROW,0,iTime(Symbol(),TF_Tralling,dfz_in_2),dfz_do_1,0,0,0,0);
+            ObjectSet("FR Sell",OBJPROP_ARROWCODE,159);
+            ObjectSet("FR Sell",OBJPROP_COLOR,255);
+           }
+        }
+     }
+   if(bsw_0==1)
+     {
+      if(dfz_do_1!=0)
+        {
+         ObjectDelete("SL Buy");
+         ObjectCreate("SL Buy",OBJ_ARROW,0,Time[0] + Period() * 60,dfz_do_1,0,0,0,0);
+         ObjectSet("SL Buy",OBJPROP_ARROWCODE,6);
+         ObjectSet("SL Buy",OBJPROP_COLOR,16711680);
+        }
+      if(by_in_2>0)
+        {
+         ObjectDelete("STOPLEVEL-");
+         ObjectCreate("STOPLEVEL-",OBJ_ARROW,0,Time[0] + Period() * 60,bsw_1 - by_in_2 * Point(),0,0,0,0);
+         ObjectSet("STOPLEVEL-",OBJPROP_ARROWCODE,4);
+         ObjectSet("STOPLEVEL-",OBJPROP_COLOR,16711680);
+        }
+     }
+   if(bsw_0==-1)
+     {
+      if(dfz_do_1!=0)
+        {
+         ObjectDelete("SL Sell");
+         ObjectCreate("SL Sell",OBJ_ARROW,0,Time[0] + Period() * 60,dfz_do_1,0,0,0,0);
+         ObjectSet("SL Sell",OBJPROP_ARROWCODE,6);
+         ObjectSet("SL Sell",OBJPROP_COLOR,13353215);
+        }
+      if(by_in_2>0)
+        {
+         ObjectDelete("STOPLEVEL+");
+         ObjectCreate("STOPLEVEL+",OBJ_ARROW,0,Time[0] + Period() * 60,by_in_2 * Point() + bsw_1,0,0,0,0);
+         ObjectSet("STOPLEVEL+",OBJPROP_ARROWCODE,4);
+         ObjectSet("STOPLEVEL+",OBJPROP_COLOR,13353215);
+        }
+     }
+   return(dfz_do_1);
+   aa_do_1 = dfz_do_1;
+  }
+//lizong_6
+//---------------------  ----------------------------------------
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int lizong_7(int bsw_0)
+  {
+
+//----------------------------
+
+   if(bsw_0>43200)
+     {
+      return(0);
+     }
+   if(bsw_0>10080)
+     {
+      return(43200);
+     }
+   if(bsw_0>1440)
+     {
+      return(10080);
+     }
+   if(bsw_0>240)
+     {
+      return(1440);
+     }
+   if(bsw_0>60)
+     {
+      return(240);
+     }
+   if(bsw_0>30)
+     {
+      return(60);
+     }
+   if(bsw_0>15)
+     {
+      return(30);
+     }
+   if(bsw_0>5)
+     {
+      return(15);
+     }
+   if(bsw_0>1)
+     {
+      return(5);
+     }
+   if(bsw_0==1)
+     {
+      return(1);
+     }
+   if(bsw_0==0)
+     {
+      return(Period());
+     }
+   return(0);
+  }
+//lizong_7
+//---------------------  ----------------------------------------
+
+//+------------------------------------------------------------------+
